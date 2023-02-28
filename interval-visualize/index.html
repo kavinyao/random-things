@@ -4,9 +4,6 @@
     <title>Interval Visualize</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css" integrity="sha512-NmLkDIU1C/C88wi324HBc+S2kLhi08PN5GDeUVVVC/BVt/9Izdsc9SVeVfA1UZbY3sHUlDSyRXhCzHfr6hmPPw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <style>
-body, div {
-  <!-- border: 1px solid #000; -->
-}
 body {
   width: 1200px;
   margin: 0 auto;
@@ -18,6 +15,12 @@ h1 {
 }
 body>div {
   margin-top: 20px;
+}
+#controls>div {
+  margin-bottom: 10px;
+}
+#bulk-container textarea {
+  height: 200px;
 }
 #interval-container {
   position: relative;
@@ -44,13 +47,26 @@ body>div {
 
     <div id="controls">
       <div>
-        <label for="interval-input">Add interval:</label>
-        <input type="text" name="interval-input" placeholder="example: 5 10" />
-        <input type="submit" id="add-button" value="Add" />
+        <label for="interval-input">Add single interval:</label>
+        <input type="text" name="interval-input" placeholder="5 10" />
+        <input type="button" id="add-button" value="Add" />
       </div>
       <div>
-        <input type="submit" id="sort-button" value="Sort" />
-        <input type="submit" id="clear-button" value="Clear" />
+        <label for="leetcode-interval-input">Add leetcode intervals:</label>
+        <input type="text" name="leetcode-interval-input" placeholder="[5, 10], [10, 20]" style="width: 400px" />
+        <input type="button" id="leetcode-add-button" value="Add" />
+      </div>
+      <div>
+        <input type="button" id="sort-button" value="Sort" />
+        <input type="button" id="clear-button" value="Clear" />
+        <input type="button" id="bulk-button" value="Bulk Input" />
+      </div>
+      <div id="bulk-container" style="display:none">
+        <textarea>5 10
+10 20</textarea>
+        <div>
+          <input type="button" id="bulk-add-button" value="Add" />
+        </div>
       </div>
     </div>
 
@@ -63,7 +79,30 @@ body>div {
 
     <script type="text/javascript">
 window.addEventListener('DOMContentLoaded', (event) => {
-  function render_intervals(intervals) {
+  let intervals = [
+    [5, 10],
+    [10, 15],
+    [15, 20],
+  ];
+
+  function parse_interval(s) {
+    // input should be something like '10 20'
+    let parts = s.split(' ');
+    let start = parseInt(parts[0], 10);
+    let end = parseInt(parts[1], 10);
+
+    if (Number.isNaN(start) || Number.isNaN(end)) {
+      throw `Invalid input: ${s}`;
+    }
+
+    if (start >= end) {
+      throw `Invalid input: ${s}`;
+    }
+
+    return [start, end];
+  }
+
+  function render_intervals() {
     let range_min = Infinity;
     let range_max = 0;
 
@@ -101,27 +140,63 @@ window.addEventListener('DOMContentLoaded', (event) => {
     container.innerHTML = html;
   }
 
-  let intervals = [
-    [5, 10],
-    [10, 15],
-    [15, 20],
-  ];
-
   document.querySelector('#add-button').addEventListener('click', (e) => {
     e.preventDefault();
 
     let input = document.querySelector("input[name=interval-input]");
-    let parts = input.value.split(' ');
-    let start = parseInt(parts[0], 10);
-    let end = parseInt(parts[1], 10);
+    try {
+      let i = parse_interval(input.value);
+      intervals.push(i);
+      input.value = '';
+      render_intervals();
+    } catch(e) {
+      window.alert(e);
+    };
+  });
 
-    if (Number.isNaN(start) || Number.isNaN(end)) {
-      window.alert('invalid input');
+  document.querySelector('#bulk-add-button').addEventListener('click', (e) => {
+    e.preventDefault();
+
+    let textarea = document.querySelector('#bulk-container textarea');
+    textarea.value.split('\n').forEach((s) => {
+      try {
+        let i = parse_interval(s);
+        intervals.push(i);
+      } catch(e) {
+        window.alert(e);
+      }
+    });
+
+    textarea.value = '';
+    render_intervals();
+  });
+
+  document.querySelector('#leetcode-add-button').addEventListener('click', (e) => {
+    e.preventDefault();
+
+    let input = document.querySelector("input[name=leetcode-interval-input]");
+    let has_any_bad_value = false;
+    let arr = JSON.parse(`[${input.value}]`);
+    if (!Array.isArray(arr)) {
+      window.alert(`Invalid input: ${input.value}`);
       return;
     }
 
-    intervals.push([start, end]);
-    render_intervals(intervals);
+    for (const i of arr) {
+      if (!Array.isArray(i) || i.length != 2 || i[0] >= i[1]) {
+        has_any_bad_value = true;
+        continue;
+      }
+
+      intervals.push(i);
+    }
+
+    if (has_any_bad_value) {
+      window.alert("One or more input intervals are invalid and ignored");
+    }
+
+    input.value = '';
+    render_intervals();
   });
 
   document.querySelector('#sort-button').addEventListener('click', (e) => {
@@ -135,17 +210,24 @@ window.addEventListener('DOMContentLoaded', (event) => {
       return i1[0] - i2[0];
     });
 
-    render_intervals(intervals);
+    render_intervals();
   });
 
   document.querySelector('#clear-button').addEventListener('click', (e) => {
     e.preventDefault();
 
     intervals = [];
-    render_intervals(intervals);
+    render_intervals();
   });
 
-  render_intervals(intervals);
+  document.querySelector('#bulk-button').addEventListener('click', (e) => {
+    e.preventDefault();
+
+    let bulk_container = document.querySelector('#bulk-container');
+    bulk_container.style.display = bulk_container.style.display === 'none' ? 'block' : 'none';
+  });
+
+  render_intervals();
 });
     </script>
   </body>
