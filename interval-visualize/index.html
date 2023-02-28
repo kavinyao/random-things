@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Interval Visualize</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css" integrity="sha512-NmLkDIU1C/C88wi324HBc+S2kLhi08PN5GDeUVVVC/BVt/9Izdsc9SVeVfA1UZbY3sHUlDSyRXhCzHfr6hmPPw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+body, div {
+  <!-- border: 1px solid #000; -->
+}
+body {
+  width: 1200px;
+  margin: 0 auto;
+  padding-top: 20px;
+  font-family: sans-serif;
+}
+h1 {
+  font-size: 2em;
+}
+body>div {
+  margin-top: 20px;
+}
+#interval-container {
+  position: relative;
+}
+.interval {
+  position: absolute;
+  background-color: orange;
+}
+.interval .start {
+  position: absolute;
+  left: 0;
+  padding: 5px;
+}
+.interval .end {
+  position: absolute;
+  right: 0;
+  padding: 5px;
+}
+</style>
+  </head>
+
+  <body>
+    <h1>Interval Visualize</h1>
+
+    <div id="controls">
+      <div>
+        <label for="interval-input">Add interval:</label>
+        <input type="text" name="interval-input" placeholder="example: 5 10" />
+        <input type="submit" id="add-button" value="Add" />
+      </div>
+      <div>
+        <input type="submit" id="sort-button" value="Sort" />
+        <input type="submit" id="clear-button" value="Clear" />
+      </div>
+    </div>
+
+    <div id="interval-container">
+      <div class="interval" data-start="15" data-end="35" style="width: 100px;">
+        <span class="start">15</span>
+        <span class="end">35</span>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+window.addEventListener('DOMContentLoaded', (event) => {
+  function render_intervals(intervals) {
+    let range_min = Infinity;
+    let range_max = 0;
+
+    intervals.forEach((i) => {
+      if (i[0] < range_min) {
+        range_min = i[0];
+      }
+
+      if (i[1] > range_max) {
+        range_max = i[1];
+      }
+    });
+
+    let range = range_max - range_min;
+    console.log('range min:', range_min, 'range max:', range_max, 'range:', range);
+
+    let container = document.querySelector('#interval-container');
+    console.log('container width:', container.clientWidth);
+    const interval_height_px = 30;
+    const interval_gap_px = 10;
+
+    let html = '';
+    intervals.forEach((i, idx) => {
+      let top_px = idx * (interval_height_px + interval_gap_px);
+      let left_px = Math.floor((i[0] - range_min) * container.clientWidth / range);
+      let width_px = Math.floor((i[1] - i[0]) * container.clientWidth / range);
+      console.log('range:', i[0], i[1], 'top:', top_px, 'left:', left_px, 'width:', width_px);
+
+      html += `<div class="interval" data-start="${i[0]}" data-end="${i[1]}" style="top: ${top_px}px;left: ${left_px}px;width: ${width_px}px; height:${interval_height_px}px">
+        <span class="start">${i[0]}</span>
+        <span class="end">${i[1]}</span>
+      </div>`;
+    });
+
+    container.innerHTML = html;
+  }
+
+  let intervals = [
+    [5, 10],
+    [10, 15],
+    [15, 20],
+  ];
+
+  document.querySelector('#add-button').addEventListener('click', (e) => {
+    e.preventDefault();
+
+    let input = document.querySelector("input[name=interval-input]");
+    let parts = input.value.split(' ');
+    let start = parseInt(parts[0], 10);
+    let end = parseInt(parts[1], 10);
+
+    if (Number.isNaN(start) || Number.isNaN(end)) {
+      window.alert('invalid input');
+      return;
+    }
+
+    intervals.push([start, end]);
+    render_intervals(intervals);
+  });
+
+  document.querySelector('#sort-button').addEventListener('click', (e) => {
+    e.preventDefault();
+
+    intervals.sort((i1, i2) => {
+      if (i1[0] == i2[0]) {
+        return i1[1] - i2[1];
+      }
+
+      return i1[0] - i2[0];
+    });
+
+    render_intervals(intervals);
+  });
+
+  document.querySelector('#clear-button').addEventListener('click', (e) => {
+    e.preventDefault();
+
+    intervals = [];
+    render_intervals(intervals);
+  });
+
+  render_intervals(intervals);
+});
+    </script>
+  </body>
+</html>
